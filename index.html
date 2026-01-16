@@ -3,51 +3,140 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <title>Tienda</title>
 
 <style>
-body{font-family:Arial;margin:0;background:#fafafa}
-header{background:#ff7a00;color:#fff;padding:15px;text-align:center;font-size:20px}
-#buscador{padding:10px}
-#buscador input{
-  width:100%;padding:10px;font-size:16px;
-  border-radius:6px;border:1px solid #ccc
+:root{--naranja:#ff7a00}
+body{margin:0;font-family:Arial;background:#fafafa}
+
+header{
+  background:var(--naranja);
+  color:#fff;
+  padding:12px;
+  text-align:center;
+  font-size:20px;
 }
+
+#buscador{
+  width:95%;
+  margin:10px auto;
+  display:block;
+  padding:10px;
+  font-size:16px;
+  border-radius:6px;
+  border:1px solid #ccc;
+}
+
+#loader{
+  text-align:center;
+  padding:20px;
+}
+
 #productos{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
-  gap:10px;padding:10px
+  grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  gap:10px;
+  padding:10px;
+  margin-bottom:80px;
 }
+
 .card{
-  background:#fff;border-radius:8px;
-  box-shadow:0 2px 8px rgba(0,0,0,.2)
-}
-.card img{width:100%;height:120px;object-fit:cover}
-.card h3{font-size:14px;margin:8px}
-.card p{margin:0 8px;color:#ff7a00;font-weight:bold}
-.card button{
-  margin:8px;width:calc(100% - 16px);
-  padding:8px;border:none;
-  background:#ff7a00;color:#fff;
-  border-radius:5px
-}
-#carrito{
-  position:fixed;bottom:10px;right:10px;
-  width:280px;background:#fff;
+  background:#fff;
   border-radius:10px;
-  box-shadow:0 4px 15px rgba(0,0,0,.3)
+  box-shadow:0 2px 8px rgba(0,0,0,.1);
+  overflow:hidden;
 }
-#lista{padding:10px;max-height:160px;overflow:auto;font-size:14px}
-#cliente{padding:10px;border-top:1px solid #ddd}
+.card img{
+  width:100%;
+  height:120px;
+  object-fit:cover;
+}
+.card h3{margin:6px;font-size:14px}
+.card p{margin:0 6px;color:var(--naranja);font-weight:bold}
+.card button{
+  margin:6px;
+  width:calc(100% - 12px);
+  padding:8px;
+  border:none;
+  background:var(--naranja);
+  color:#fff;
+  border-radius:6px;
+}
+
+#toggleCarrito{
+  position:fixed;
+  bottom:10px;
+  right:10px;
+  background:var(--naranja);
+  color:#fff;
+  border:none;
+  padding:12px;
+  border-radius:50%;
+  font-size:18px;
+  z-index:1000;
+}
+
+#carrito{
+  position:fixed;
+  bottom:0;
+  left:0;
+  width:100%;
+  max-height:70vh;
+  background:#fff;
+  box-shadow:0 -4px 15px rgba(0,0,0,.3);
+  transform:translateY(100%);
+  transition:.3s;
+  z-index:999;
+}
+#carrito.activo{transform:translateY(0)}
+
+#carrito h2{
+  margin:0;
+  padding:10px;
+  background:var(--naranja);
+  color:#fff;
+  text-align:center;
+}
+
+#lista{
+  max-height:200px;
+  overflow:auto;
+  padding:8px;
+}
+
+.item{
+  display:flex;
+  justify-content:space-between;
+  font-size:14px;
+  margin-bottom:6px;
+}
+
+.controls button{
+  background:var(--naranja);
+  border:none;
+  color:#fff;
+  width:22px;
+  height:22px;
+  border-radius:50%;
+}
+
 #cliente input{
-  width:100%;padding:8px;margin-bottom:6px;
-  border-radius:5px;border:1px solid #ccc
+  width:95%;
+  margin:5px auto;
+  display:block;
+  padding:8px;
 }
-#total{padding:8px;font-weight:bold;text-align:center}
+
+#total{text-align:center;font-weight:bold}
+
 #wp{
-  background:#25D366;color:#fff;
-  width:100%;border:none;
-  padding:10px;font-size:15px
+  width:100%;
+  padding:12px;
+  background:#25D366;
+  color:#fff;
+  border:none;
+  font-size:16px;
 }
 </style>
 </head>
@@ -56,92 +145,98 @@ header{background:#ff7a00;color:#fff;padding:15px;text-align:center;font-size:20
 
 <header>🛒 Tienda</header>
 
-<div id="buscador">
-  <input id="search" placeholder="Buscar producto...">
-</div>
+<input id="buscador" placeholder="🔍 Buscar producto">
 
-<div id="productos">Cargando productos...</div>
+<div id="loader">Cargando productos...</div>
+<div id="productos"></div>
+
+<button id="toggleCarrito">🛒</button>
 
 <div id="carrito">
+  <h2>Carrito</h2>
   <div id="lista"></div>
-
   <div id="cliente">
     <input id="nombre" placeholder="Nombre">
     <input id="direccion" placeholder="Dirección">
   </div>
-
   <div id="total">$0</div>
   <button id="wp">Enviar por WhatsApp</button>
 </div>
 
 <script>
-const API_URL="https://script.google.com/macros/s/AKfycbyWAAlnirX3IwxNHU8T4gQrV7Yy3GM2oqXBfNakG29fWVgboDdDh3pKmoHbqOX1Nw2y/exec";
-const WHATSAPP="5492612090061";
+const API_URL = "https://script.google.com/macros/s/AKfycbxKBOUbZYO5qffh3ec4b0MJtFpjgrX6Exuy8Vj78C_TXxjcH894Lea2r_H3HDjK0qrj/exec";
+const WHATSAPP = "5492612090061";
 
-let productos=[], carrito={};
+let productos=[], carrito={}, debounce;
 
-function cargarProductos(data){
-  productos=data;
-  renderProductos(productos);
-}
-
-const s=document.createElement("script");
-s.src=API_URL+"?callback=cargarProductos";
-document.body.appendChild(s);
-
-function renderProductos(lista){
-  const c=document.getElementById("productos");
-  c.innerHTML="";
-  lista.forEach(p=>{
-    c.innerHTML+=`
-    <div class="card">
-      <img src="${p.Imagen}">
-      <h3>${p.Descripcion}</h3>
-      <p>$${p.Precio}</p>
-      <button onclick="add('${p.Id_producto}')">Agregar</button>
-    </div>`;
+fetch(API_URL+"?t="+Date.now())
+  .then(r=>r.json())
+  .then(data=>{
+    productos=data.filter(p=>p.Precio>0);
+    document.getElementById("loader").style.display="none";
+    renderLote(productos,0);
   });
+
+function renderLote(arr,i){
+  if(i>=arr.length) return;
+  const cont=document.getElementById("productos");
+  for(let j=i;j<i+8 && j<arr.length;j++){
+    const p=arr[j];
+    cont.innerHTML+=`
+      <div class="card">
+        <img src="${p.Imagen}" loading="lazy">
+        <h3>${p.Descripcion}</h3>
+        <p>$${p.Precio}</p>
+        <button onclick="add('${p.Id_producto}')">Agregar</button>
+      </div>`;
+  }
+  setTimeout(()=>renderLote(arr,i+8),50);
 }
 
-document.getElementById("search").oninput=e=>{
-  const t=e.target.value.toLowerCase();
-  renderProductos(
-    productos.filter(p=>p.Descripcion.toLowerCase().includes(t))
-  );
+document.getElementById("buscador").oninput=e=>{
+  clearTimeout(debounce);
+  debounce=setTimeout(()=>{
+    document.getElementById("productos").innerHTML="";
+    renderLote(productos.filter(p=>p.Descripcion.toLowerCase().includes(e.target.value.toLowerCase())),0);
+  },300);
 };
 
-function add(id){
-  carrito[id]=(carrito[id]||0)+1;
-  renderCarrito();
-}
+function add(id){carrito[id]=(carrito[id]||0)+1;renderCarrito()}
+function sub(id){carrito[id]--;if(carrito[id]<=0)delete carrito[id];renderCarrito()}
 
 function renderCarrito(){
   const l=document.getElementById("lista");
-  let total=0;
-  l.innerHTML="";
+  let t=0;l.innerHTML="";
   for(let id in carrito){
     const p=productos.find(x=>x.Id_producto===id);
-    total+=p.Precio*carrito[id];
-    l.innerHTML+=`${p.Descripcion} x${carrito[id]}<br>`;
+    l.innerHTML+=`
+    <div class="item">${p.Descripcion}
+      <div class="controls">
+        <button onclick="sub('${id}')">-</button> ${carrito[id]}
+        <button onclick="add('${id}')">+</button>
+      </div>
+    </div>`;
+    t+=p.Precio*carrito[id];
   }
-  document.getElementById("total").innerText="Total: $"+total;
+  document.getElementById("total").innerText="Total: $"+t;
 }
 
+document.getElementById("toggleCarrito").onclick=()=>{
+  document.getElementById("carrito").classList.toggle("activo");
+};
+
 document.getElementById("wp").onclick=()=>{
-  const n=nombre.value.trim();
-  const d=direccion.value.trim();
-  if(!n||!d){ alert("Completá nombre y dirección"); return; }
-
-  let msg=`🛒 Pedido%0A👤 ${n}%0A📍 ${d}%0A%0A`;
-  let total=0;
-
+  const n=nombre.value.trim(), d=direccion.value.trim();
+  if(!n||!d)return alert("Completá nombre y dirección");
+  let m=`Pedido\n${n}\n${d}\n\n`;
+  let t=0;
   for(let id in carrito){
     const p=productos.find(x=>x.Id_producto===id);
-    msg+=`• ${p.Descripcion} x${carrito[id]}%0A`;
-    total+=p.Precio*carrito[id];
+    m+=`${p.Descripcion} x${carrito[id]}\n`;
+    t+=p.Precio*carrito[id];
   }
-  msg+=`%0ATotal: $${total}`;
-  window.open(`https://wa.me/${WHATSAPP}?text=${msg}`);
+  m+=`\nTotal $${t}`;
+  location.href=`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(m)}`;
 };
 </script>
 
