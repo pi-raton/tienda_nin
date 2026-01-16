@@ -1,0 +1,248 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tienda</title>
+
+<style>
+:root{
+  --naranja:#ff7a00;
+}
+body{
+  font-family:Arial;
+  margin:0;
+  background:#fafafa;
+}
+header{
+  background:var(--naranja);
+  color:#fff;
+  padding:15px;
+  text-align:center;
+  font-size:22px;
+}
+#buscador{
+  padding:10px;
+}
+#buscador input{
+  width:100%;
+  padding:10px;
+  font-size:16px;
+  border-radius:6px;
+  border:1px solid #ccc;
+}
+#productos{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:15px;
+  padding:15px;
+}
+.card{
+  background:#fff;
+  border-radius:10px;
+  box-shadow:0 4px 10px rgba(0,0,0,.1);
+  overflow:hidden;
+}
+.card img{
+  width:100%;
+  height:140px;
+  object-fit:cover;
+}
+.card h3{
+  margin:10px;
+  font-size:16px;
+}
+.card p{
+  margin:0 10px;
+  color:var(--naranja);
+  font-weight:bold;
+}
+.card button{
+  margin:10px;
+  width:calc(100% - 20px);
+  padding:10px;
+  border:none;
+  background:var(--naranja);
+  color:#fff;
+  border-radius:6px;
+  cursor:pointer;
+}
+#carrito{
+  position:fixed;
+  right:10px;
+  bottom:10px;
+  width:300px;
+  background:#fff;
+  border-radius:10px;
+  box-shadow:0 5px 20px rgba(0,0,0,.2);
+}
+#carrito h2{
+  margin:0;
+  padding:10px;
+  background:var(--naranja);
+  color:#fff;
+  text-align:center;
+}
+#cliente{
+  padding:10px;
+}
+#cliente input{
+  width:100%;
+  padding:8px;
+  margin-bottom:6px;
+  border-radius:5px;
+  border:1px solid #ccc;
+}
+#lista{
+  padding:10px;
+  max-height:200px;
+  overflow:auto;
+}
+.item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:6px;
+}
+.controls button{
+  background:var(--naranja);
+  border:none;
+  color:#fff;
+  width:22px;
+  height:22px;
+  border-radius:50%;
+}
+#total{
+  padding:10px;
+  text-align:center;
+  font-weight:bold;
+}
+#wp{
+  background:#25D366;
+  border:none;
+  color:#fff;
+  width:100%;
+  padding:12px;
+  font-size:16px;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<header>🛒 Tienda Online</header>
+
+<div id="buscador">
+  <input type="text" id="search" placeholder="🔍 Buscar productos...">
+</div>
+
+<div id="productos"></div>
+
+<div id="carrito">
+  <h2>Carrito</h2>
+
+  <div id="cliente">
+    <input id="nombre" placeholder="Nombre del cliente">
+    <input id="direccion" placeholder="Dirección">
+  </div>
+
+  <div id="lista"></div>
+  <div id="total">$0</div>
+  <button id="wp">Enviar por WhatsApp</button>
+</div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbwamwKm5ZK9OPswiSu7HM1oQvAX-Wlcg6_9tHmHWfZc_DY0NBl-mJxcFQOHD_CamJ2k/exec";
+const WHATSAPP = "5492612090061";
+
+let productos = [];
+let filtrados = [];
+let carrito = {};
+
+fetch(API_URL)
+  .then(r => r.json())
+  .then(data => {
+    productos = data.filter(p => p.Precio > 0);
+    filtrados = productos;
+    renderProductos();
+  });
+
+document.getElementById("search").addEventListener("input", e => {
+  const q = e.target.value.toLowerCase();
+  filtrados = productos.filter(p =>
+    p.Descripcion.toLowerCase().includes(q)
+  );
+  renderProductos();
+});
+
+function renderProductos(){
+  const cont = document.getElementById("productos");
+  cont.innerHTML = "";
+  filtrados.forEach(p => {
+    cont.innerHTML += `
+      <div class="card">
+        <img src="${p.Imagen}">
+        <h3>${p.Descripcion}</h3>
+        <p>$${p.Precio}</p>
+        <button onclick="add('${p.Id_producto}')">Agregar</button>
+      </div>`;
+  });
+}
+
+function add(id){
+  carrito[id] = (carrito[id] || 0) + 1;
+  renderCarrito();
+}
+function sub(id){
+  carrito[id]--;
+  if(carrito[id]<=0) delete carrito[id];
+  renderCarrito();
+}
+
+function renderCarrito(){
+  const lista = document.getElementById("lista");
+  let total = 0;
+  lista.innerHTML = "";
+  for(let id in carrito){
+    const p = productos.find(x => x.Id_producto === id);
+    const c = carrito[id];
+    total += p.Precio * c;
+    lista.innerHTML += `
+      <div class="item">
+        ${p.Descripcion}
+        <div class="controls">
+          <button onclick="sub('${id}')">-</button>
+          ${c}
+          <button onclick="add('${id}')">+</button>
+        </div>
+      </div>`;
+  }
+  document.getElementById("total").innerText = "Total: $" + total;
+}
+
+document.getElementById("wp").onclick = () => {
+  const nombre = document.getElementById("nombre").value;
+  const direccion = document.getElementById("direccion").value;
+
+  if(!nombre || !direccion){
+    alert("Completá nombre y dirección");
+    return;
+  }
+
+  let msg = `🛒 *Pedido*%0A👤 ${nombre}%0A📍 ${direccion}%0A%0A`;
+  let total = 0;
+
+  for(let id in carrito){
+    const p = productos.find(x => x.Id_producto === id);
+    msg += `• ${p.Descripcion} x${carrito[id]}%0A`;
+    total += p.Precio * carrito[id];
+  }
+
+  msg += `%0A💰 Total: $${total}`;
+  window.open(`https://wa.me/${WHATSAPP}?text=${msg}`);
+};
+</script>
+
+</body>
+</html>
