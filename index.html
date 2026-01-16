@@ -3,24 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tienda</title>
+
+<title>Tienda Online</title>
 
 <style>
-:root{
-  --naranja:#ff7a00;
-}
-body{
-  font-family:Arial;
-  margin:0;
-  background:#fafafa;
-}
-header{
-  background:var(--naranja);
-  color:#fff;
-  padding:15px;
-  text-align:center;
-  font-size:22px;
-}
+:root{ --naranja:#ff7a00; }
+body{ font-family:Arial;margin:0;background:#fafafa; }
+header{ background:var(--naranja);color:#fff;padding:15px;text-align:center;font-size:22px; }
+
 #buscador{
   padding:10px;
 }
@@ -31,9 +21,10 @@ header{
   border-radius:6px;
   border:1px solid #ccc;
 }
+
 #productos{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
   gap:15px;
   padding:15px;
 }
@@ -45,21 +36,14 @@ header{
 }
 .card img{
   width:100%;
-  height:140px;
+  height:130px;
   object-fit:cover;
 }
-.card h3{
-  margin:10px;
-  font-size:16px;
-}
-.card p{
-  margin:0 10px;
-  color:var(--naranja);
-  font-weight:bold;
-}
+.card h3{ margin:8px;font-size:15px; }
+.card p{ margin:0 8px;color:var(--naranja);font-weight:bold; }
 .card button{
-  margin:10px;
-  width:calc(100% - 20px);
+  margin:8px;
+  width:calc(100% - 16px);
   padding:10px;
   border:none;
   background:var(--naranja);
@@ -67,14 +51,18 @@ header{
   border-radius:6px;
   cursor:pointer;
 }
+
 #carrito{
   position:fixed;
   right:10px;
   bottom:10px;
   width:300px;
+  max-height:90vh;
   background:#fff;
   border-radius:10px;
   box-shadow:0 5px 20px rgba(0,0,0,.2);
+  display:flex;
+  flex-direction:column;
 }
 #carrito h2{
   margin:0;
@@ -83,26 +71,17 @@ header{
   color:#fff;
   text-align:center;
 }
-#cliente{
-  padding:10px;
-}
-#cliente input{
-  width:100%;
-  padding:8px;
-  margin-bottom:6px;
-  border-radius:5px;
-  border:1px solid #ccc;
-}
 #lista{
   padding:10px;
-  max-height:200px;
   overflow:auto;
+  flex:1;
 }
 .item{
   display:flex;
   justify-content:space-between;
   align-items:center;
   margin-bottom:6px;
+  font-size:14px;
 }
 .controls button{
   background:var(--naranja);
@@ -112,11 +91,25 @@ header{
   height:22px;
   border-radius:50%;
 }
+
+#cliente{
+  padding:10px;
+  border-top:1px solid #ddd;
+}
+#cliente input{
+  width:100%;
+  padding:8px;
+  margin-bottom:6px;
+  border-radius:5px;
+  border:1px solid #ccc;
+}
+
 #total{
   padding:10px;
   text-align:center;
   font-weight:bold;
 }
+
 #wp{
   background:#25D366;
   border:none;
@@ -134,20 +127,20 @@ header{
 <header>🛒 Tienda Online</header>
 
 <div id="buscador">
-  <input type="text" id="search" placeholder="🔍 Buscar productos...">
+  <input type="text" id="search" placeholder="Buscar producto...">
 </div>
 
-<div id="productos"></div>
+<div id="productos">Cargando productos...</div>
 
 <div id="carrito">
   <h2>Carrito</h2>
+  <div id="lista"></div>
 
   <div id="cliente">
     <input id="nombre" placeholder="Nombre del cliente">
     <input id="direccion" placeholder="Dirección">
   </div>
 
-  <div id="lista"></div>
   <div id="total">$0</div>
   <button id="wp">Enviar por WhatsApp</button>
 </div>
@@ -157,38 +150,44 @@ const API_URL = "https://script.google.com/macros/s/AKfycbwamwKm5ZK9OPswiSu7HM1o
 const WHATSAPP = "5492612090061";
 
 let productos = [];
-let filtrados = [];
 let carrito = {};
 
-fetch(API_URL)
-  .then(r => r.json())
-  .then(data => {
-    productos = data.filter(p => p.Precio > 0);
-    filtrados = productos;
-    renderProductos();
-  });
-
-document.getElementById("search").addEventListener("input", e => {
-  const q = e.target.value.toLowerCase();
-  filtrados = productos.filter(p =>
-    p.Descripcion.toLowerCase().includes(q)
-  );
-  renderProductos();
+// 🔥 FETCH COMPATIBLE CELULAR
+fetch(API_URL + "?t=" + Date.now(), {
+  method:"GET",
+  mode:"cors",
+  cache:"no-store"
+})
+.then(r => r.json())
+.then(data => {
+  productos = data.filter(p => Number(p.Precio) > 0);
+  renderProductos(productos);
+})
+.catch(() => {
+  document.getElementById("productos").innerHTML =
+    "<p style='padding:15px;color:red'>Error cargando productos</p>";
 });
 
-function renderProductos(){
+function renderProductos(lista){
   const cont = document.getElementById("productos");
   cont.innerHTML = "";
-  filtrados.forEach(p => {
+  lista.forEach(p => {
     cont.innerHTML += `
-      <div class="card">
-        <img src="${p.Imagen}">
-        <h3>${p.Descripcion}</h3>
-        <p>$${p.Precio}</p>
-        <button onclick="add('${p.Id_producto}')">Agregar</button>
-      </div>`;
+    <div class="card">
+      <img src="${p.Imagen}">
+      <h3>${p.Descripcion}</h3>
+      <p>$${p.Precio}</p>
+      <button onclick="add('${p.Id_producto}')">Agregar</button>
+    </div>`;
   });
 }
+
+document.getElementById("search").oninput = e => {
+  const t = e.target.value.toLowerCase();
+  renderProductos(productos.filter(p =>
+    p.Descripcion.toLowerCase().includes(t)
+  ));
+};
 
 function add(id){
   carrito[id] = (carrito[id] || 0) + 1;
@@ -209,14 +208,14 @@ function renderCarrito(){
     const c = carrito[id];
     total += p.Precio * c;
     lista.innerHTML += `
-      <div class="item">
-        ${p.Descripcion}
-        <div class="controls">
-          <button onclick="sub('${id}')">-</button>
-          ${c}
-          <button onclick="add('${id}')">+</button>
-        </div>
-      </div>`;
+    <div class="item">
+      ${p.Descripcion}
+      <div class="controls">
+        <button onclick="sub('${id}')">-</button>
+        ${c}
+        <button onclick="add('${id}')">+</button>
+      </div>
+    </div>`;
   }
   document.getElementById("total").innerText = "Total: $" + total;
 }
@@ -230,7 +229,7 @@ document.getElementById("wp").onclick = () => {
     return;
   }
 
-  let msg = `🛒 *Pedido*%0A👤 ${nombre}%0A📍 ${direccion}%0A%0A`;
+  let msg = `🛒 Pedido%0A👤 ${nombre}%0A📍 ${direccion}%0A%0A`;
   let total = 0;
 
   for(let id in carrito){
@@ -239,7 +238,7 @@ document.getElementById("wp").onclick = () => {
     total += p.Precio * carrito[id];
   }
 
-  msg += `%0A💰 Total: $${total}`;
+  msg += `%0ATotal: $${total}`;
   window.open(`https://wa.me/${WHATSAPP}?text=${msg}`);
 };
 </script>
