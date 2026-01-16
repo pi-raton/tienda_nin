@@ -3,244 +3,80 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
-<title>Tienda Online</title>
+<title>Tienda</title>
 
 <style>
-:root{ --naranja:#ff7a00; }
-body{ font-family:Arial;margin:0;background:#fafafa; }
-header{ background:var(--naranja);color:#fff;padding:15px;text-align:center;font-size:22px; }
-
-#buscador{
-  padding:10px;
-}
-#buscador input{
-  width:100%;
-  padding:10px;
-  font-size:16px;
-  border-radius:6px;
-  border:1px solid #ccc;
-}
-
-#productos{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
-  gap:15px;
-  padding:15px;
-}
-.card{
-  background:#fff;
-  border-radius:10px;
-  box-shadow:0 4px 10px rgba(0,0,0,.1);
-  overflow:hidden;
-}
-.card img{
-  width:100%;
-  height:130px;
-  object-fit:cover;
-}
-.card h3{ margin:8px;font-size:15px; }
-.card p{ margin:0 8px;color:var(--naranja);font-weight:bold; }
-.card button{
-  margin:8px;
-  width:calc(100% - 16px);
-  padding:10px;
-  border:none;
-  background:var(--naranja);
-  color:#fff;
-  border-radius:6px;
-  cursor:pointer;
-}
-
-#carrito{
-  position:fixed;
-  right:10px;
-  bottom:10px;
-  width:300px;
-  max-height:90vh;
-  background:#fff;
-  border-radius:10px;
-  box-shadow:0 5px 20px rgba(0,0,0,.2);
-  display:flex;
-  flex-direction:column;
-}
-#carrito h2{
-  margin:0;
-  padding:10px;
-  background:var(--naranja);
-  color:#fff;
-  text-align:center;
-}
-#lista{
-  padding:10px;
-  overflow:auto;
-  flex:1;
-}
-.item{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:6px;
-  font-size:14px;
-}
-.controls button{
-  background:var(--naranja);
-  border:none;
-  color:#fff;
-  width:22px;
-  height:22px;
-  border-radius:50%;
-}
-
-#cliente{
-  padding:10px;
-  border-top:1px solid #ddd;
-}
-#cliente input{
-  width:100%;
-  padding:8px;
-  margin-bottom:6px;
-  border-radius:5px;
-  border:1px solid #ccc;
-}
-
-#total{
-  padding:10px;
-  text-align:center;
-  font-weight:bold;
-}
-
-#wp{
-  background:#25D366;
-  border:none;
-  color:#fff;
-  width:100%;
-  padding:12px;
-  font-size:16px;
-  cursor:pointer;
-}
+body{font-family:Arial;margin:0;background:#fafafa}
+header{background:#ff7a00;color:#fff;padding:15px;text-align:center}
+#productos{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;padding:10px}
+.card{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.card img{width:100%;height:120px;object-fit:cover}
+.card h3{font-size:14px;margin:8px}
+.card p{margin:0 8px;color:#ff7a00;font-weight:bold}
+.card button{margin:8px;width:calc(100% - 16px);padding:8px;border:none;background:#ff7a00;color:#fff}
+#carrito{position:fixed;bottom:10px;right:10px;width:280px;background:#fff;border-radius:10px;box-shadow:0 4px 15px rgba(0,0,0,.3)}
+#lista{padding:10px;max-height:200px;overflow:auto}
 </style>
 </head>
 
 <body>
 
-<header>🛒 Tienda Online</header>
+<header>🛒 Tienda</header>
 
-<div id="buscador">
-  <input type="text" id="search" placeholder="Buscar producto...">
-</div>
-
-<div id="productos">Cargando productos...</div>
+<div id="productos">Cargando...</div>
 
 <div id="carrito">
-  <h2>Carrito</h2>
   <div id="lista"></div>
-
-  <div id="cliente">
-    <input id="nombre" placeholder="Nombre del cliente">
-    <input id="direccion" placeholder="Dirección">
-  </div>
-
-  <div id="total">$0</div>
-  <button id="wp">Enviar por WhatsApp</button>
+  <button onclick="enviar()">WhatsApp</button>
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbwamwKm5ZK9OPswiSu7HM1oQvAX-Wlcg6_9tHmHWfZc_DY0NBl-mJxcFQOHD_CamJ2k/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycby1n0v5Qd0uOR2vWXOIeaDoceBexRf85LcdxwvvwPcUknIobDk3YP01LMadfu58s4TO/exec";
 const WHATSAPP = "5492612090061";
 
-let productos = [];
-let carrito = {};
+let productos=[], carrito={};
 
-// 🔥 FETCH COMPATIBLE CELULAR
-fetch(API_URL + "?t=" + Date.now(), {
-  method:"GET",
-  mode:"cors",
-  cache:"no-store"
-})
-.then(r => r.json())
-.then(data => {
-  productos = data.filter(p => Number(p.Precio) > 0);
-  renderProductos(productos);
-})
-.catch(() => {
-  document.getElementById("productos").innerHTML =
-    "<p style='padding:15px;color:red'>Error cargando productos</p>";
-});
-
-function renderProductos(lista){
-  const cont = document.getElementById("productos");
-  cont.innerHTML = "";
-  lista.forEach(p => {
-    cont.innerHTML += `
-    <div class="card">
-      <img src="${p.Imagen}">
-      <h3>${p.Descripcion}</h3>
-      <p>$${p.Precio}</p>
-      <button onclick="add('${p.Id_producto}')">Agregar</button>
-    </div>`;
+function cargarProductos(data){
+  productos=data;
+  const c=document.getElementById("productos");
+  c.innerHTML="";
+  data.forEach(p=>{
+    c.innerHTML+=`
+      <div class="card">
+        <img src="${p.Imagen}">
+        <h3>${p.Descripcion}</h3>
+        <p>$${p.Precio}</p>
+        <button onclick="add('${p.Id_producto}')">Agregar</button>
+      </div>`;
   });
 }
 
-document.getElementById("search").oninput = e => {
-  const t = e.target.value.toLowerCase();
-  renderProductos(productos.filter(p =>
-    p.Descripcion.toLowerCase().includes(t)
-  ));
-};
+const s=document.createElement("script");
+s.src=API_URL+"?callback=cargarProductos";
+document.body.appendChild(s);
 
 function add(id){
-  carrito[id] = (carrito[id] || 0) + 1;
-  renderCarrito();
+  carrito[id]=(carrito[id]||0)+1;
+  render();
 }
-function sub(id){
-  carrito[id]--;
-  if(carrito[id]<=0) delete carrito[id];
-  renderCarrito();
-}
-
-function renderCarrito(){
-  const lista = document.getElementById("lista");
-  let total = 0;
-  lista.innerHTML = "";
+function render(){
+  const l=document.getElementById("lista");
+  let t=0; l.innerHTML="";
   for(let id in carrito){
-    const p = productos.find(x => x.Id_producto === id);
-    const c = carrito[id];
-    total += p.Precio * c;
-    lista.innerHTML += `
-    <div class="item">
-      ${p.Descripcion}
-      <div class="controls">
-        <button onclick="sub('${id}')">-</button>
-        ${c}
-        <button onclick="add('${id}')">+</button>
-      </div>
-    </div>`;
+    const p=productos.find(x=>x.Id_producto===id);
+    t+=p.Precio*carrito[id];
+    l.innerHTML+=`${p.Descripcion} x${carrito[id]}<br>`;
   }
-  document.getElementById("total").innerText = "Total: $" + total;
+  l.innerHTML+=`<b>Total $${t}</b>`;
 }
-
-document.getElementById("wp").onclick = () => {
-  const nombre = document.getElementById("nombre").value;
-  const direccion = document.getElementById("direccion").value;
-
-  if(!nombre || !direccion){
-    alert("Completá nombre y dirección");
-    return;
-  }
-
-  let msg = `🛒 Pedido%0A👤 ${nombre}%0A📍 ${direccion}%0A%0A`;
-  let total = 0;
-
+function enviar(){
+  let m="Pedido%0A";
   for(let id in carrito){
-    const p = productos.find(x => x.Id_producto === id);
-    msg += `• ${p.Descripcion} x${carrito[id]}%0A`;
-    total += p.Precio * carrito[id];
+    const p=productos.find(x=>x.Id_producto===id);
+    m+=`${p.Descripcion} x${carrito[id]}%0A`;
   }
-
-  msg += `%0ATotal: $${total}`;
-  window.open(`https://wa.me/${WHATSAPP}?text=${msg}`);
-};
+  window.open(`https://wa.me/${WHATSAPP}?text=${m}`);
+}
 </script>
 
 </body>
